@@ -3,7 +3,7 @@
 const express = require('express');
 const fetch   = require('node-fetch');
 const app     = express();
-const PORT    = process.env.PORT || 7860;
+const serverless = require('serverless-http');
 
 const SOURCE_1 = 'https://iamtjake-subdl.hf.space';
 const SOURCE_2 = 'https://vanseleem-subf2m.hf.space';
@@ -227,9 +227,5 @@ app.get('/', (req, res) => {
 </html>`);
 });
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(
-    `Sources:\n  1. ${SOURCE_1}\n  2. ${SOURCE_2}\n  3. ${SOURCE_3}\n  4. ${SOURCE_4}`
-  );
-  console.log(`\nVanSubs+ (v1.0.9) running → http://0.0.0.0:${PORT}`);
+module.exports.handler = serverless(app);
 });
