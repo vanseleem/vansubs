@@ -1,9 +1,9 @@
 'use strict';
 
-const express = require('express');
-const fetch   = require('node-fetch');
-const app     = express();
+const express    = require('express');
+const fetch      = require('node-fetch');
 const serverless = require('serverless-http');
+const app        = express();
 
 const SOURCE_1 = 'https://iamtjake-subdl.hf.space';
 const SOURCE_2 = 'https://vanseleem-subf2m.hf.space';
@@ -86,10 +86,7 @@ app.get('/subtitles/:type/:id/:extra?.json', async (req, res) => {
   const fetchJson = async (url) => {
     try {
       const resp = await fetchWithTimeout(url, FETCH_TIMEOUT_MS);
-      if (!resp.ok) {
-        console.log(`[van] ${url} → HTTP ${resp.status}`);
-        return null;
-      }
+      if (!resp.ok) { console.log(`[van] ${url} → HTTP ${resp.status}`); return null; }
       const data = await resp.json();
       const subs = Array.isArray(data) ? data : (data?.subtitles || data?.data || []);
       console.log(`[van] ${url.split('?')[0]} → ${subs.length} subtitles`);
@@ -103,8 +100,8 @@ app.get('/subtitles/:type/:id/:extra?.json', async (req, res) => {
 
   const allResults = await Promise.all(urls.map(u => fetchJson(u)));
 
-  const seenAr  = new Set();
-  const seenEn  = new Set();
+  const seenAr   = new Set();
+  const seenEn   = new Set();
   const mergedAr = [];
   const mergedEn = [];
 
@@ -113,18 +110,10 @@ app.get('/subtitles/:type/:id/:extra?.json', async (req, res) => {
     if (!subs) continue;
     const { arabic, english } = topTwoFromSource(subs);
     for (const sub of arabic) {
-      if (!seenAr.has(sub.url)) {
-        seenAr.add(sub.url);
-        mergedAr.push(sub);
-        console.log(`[van] source ${i + 1} → Arabic: ${sub.url}`);
-      }
+      if (!seenAr.has(sub.url)) { seenAr.add(sub.url); mergedAr.push(sub); console.log(`[van] source ${i + 1} → Arabic: ${sub.url}`); }
     }
     for (const sub of english) {
-      if (!seenEn.has(sub.url)) {
-        seenEn.add(sub.url);
-        mergedEn.push(sub);
-        console.log(`[van] source ${i + 1} → English: ${sub.url}`);
-      }
+      if (!seenEn.has(sub.url)) { seenEn.add(sub.url); mergedEn.push(sub); console.log(`[van] source ${i + 1} → English: ${sub.url}`); }
     }
   }
 
@@ -134,8 +123,8 @@ app.get('/subtitles/:type/:id/:extra?.json', async (req, res) => {
 });
 
 app.get('/', (req, res) => {
-  const manifestUrl = `${req.protocol}://${req.get('host')}/manifest.json`;
-  const installUrl  = 'stremio://vanseleem-vansubs.hf.space/manifest.json';
+  const manifestUrl = `${req.headers['x-forwarded-proto'] || 'https'}://${req.headers.host}/manifest.json`;
+  const installUrl  = manifestUrl.replace('https://', 'stremio://');
 
   res.type('html').send(`<!DOCTYPE html>
 <html lang="en">
@@ -145,54 +134,23 @@ app.get('/', (req, res) => {
   <title>VanSubs+</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: -apple-system, 'Segoe UI', system-ui, sans-serif;
-      background: #050810;
-      color: #dde6f0;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 28px 20px;
-      background-image:
-        radial-gradient(ellipse 70% 40% at 50% 0%, rgba(0,180,255,0.07) 0%, transparent 70%),
-        radial-gradient(ellipse 40% 30% at 80% 80%, rgba(0,100,200,0.05) 0%, transparent 60%);
-    }
+    body { font-family: -apple-system, 'Segoe UI', system-ui, sans-serif; background: #050810; color: #dde6f0; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 28px 20px; background-image: radial-gradient(ellipse 70% 40% at 50% 0%, rgba(0,180,255,0.07) 0%, transparent 70%), radial-gradient(ellipse 40% 30% at 80% 80%, rgba(0,100,200,0.05) 0%, transparent 60%); }
     .wrap { width: 100%; max-width: 560px; display: flex; flex-direction: column; gap: 20px; }
-    .header { display: flex; flex-direction: column; gap: 12px; }
     .logo { font-size: 2.6rem; font-weight: 800; letter-spacing: -1px; line-height: 1; }
-    .logo .van { color: #00c6ff; }
-    .logo .subs { color: #ffffff; }
-    .badge-row { display: flex; gap: 8px; flex-wrap: wrap; }
-    .badge {
-      display: inline-flex; align-items: center; gap: 5px;
-      background: rgba(0,198,255,0.08); border: 1px solid rgba(0,198,255,0.18);
-      color: #ffffff; padding: 4px 11px; border-radius: 100px;
-      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase;
-    }
+    .logo .van { color: #00c6ff; } .logo .subs { color: #ffffff; }
+    .badge-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+    .badge { display: inline-flex; align-items: center; gap: 5px; background: rgba(0,198,255,0.08); border: 1px solid rgba(0,198,255,0.18); color: #ffffff; padding: 4px 11px; border-radius: 100px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; }
     .badge.green { background: rgba(0,220,130,0.08); border-color: rgba(0,220,130,0.18); color: #00dc82; }
-    .desc { color: #ffffff; font-size: 0.9rem; line-height: 1.6; margin-top: 2px; }
-    .card {
-      background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07);
-      border-radius: 16px; padding: 20px 22px;
-    }
+    .desc { color: #ffffff; font-size: 0.9rem; line-height: 1.6; margin-top: 10px; }
+    .card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 16px; padding: 20px 22px; }
     .card-label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #ffffff; margin-bottom: 10px; }
-    .url-box {
-      font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; font-size: 0.8rem;
-      color: #ffffff; background: rgba(0,0,0,0.25); border: 1px solid rgba(0,198,255,0.12);
-      border-radius: 10px; padding: 11px 14px; word-break: break-all; line-height: 1.5;
-    }
+    .url-box { font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; font-size: 0.8rem; color: #ffffff; background: rgba(0,0,0,0.25); border: 1px solid rgba(0,198,255,0.12); border-radius: 10px; padding: 11px 14px; word-break: break-all; line-height: 1.5; }
     .actions { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
     .btn { padding: 10px 22px; border-radius: 10px; font-size: 0.84rem; font-weight: 600; text-decoration: none; border: none; cursor: pointer; transition: all 0.15s; font-family: inherit; }
-    .btn-primary { background: #00c6ff; color: #050810; }
-    .btn-primary:hover { background: #00b0e8; }
-    .btn-copy { background: #ffffff; color: #050810; border: 1px solid #ffffff; }
-    .btn-copy:hover { background: #e6e6e6; border-color: #e6e6e6; }
+    .btn-primary { background: #00c6ff; color: #050810; } .btn-primary:hover { background: #00b0e8; }
+    .btn-copy { background: #ffffff; color: #050810; border: 1px solid #ffffff; } .btn-copy:hover { background: #e6e6e6; }
     .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-    .stat {
-      background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06);
-      border-radius: 12px; padding: 16px 12px; text-align: center;
-    }
+    .stat { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 16px 12px; text-align: center; }
     .stat-val { font-size: 1.5rem; font-weight: 800; color: #fff; line-height: 1; margin-bottom: 5px; }
     .stat-lbl { font-size: 0.68rem; color: #3a5060; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
     .made-by { text-align: center; color: #ffffff; font-size: 0.85rem; margin-top: 6px; opacity: 0.8; }
@@ -203,7 +161,7 @@ app.get('/', (req, res) => {
     <div class="header">
       <div class="logo"><span class="van">Van</span><span class="subs">Subs+</span></div>
       <div class="badge-row">
-        <span class="badge anti-ai">🛡 Anti-AI</span>
+        <span class="badge">🛡 Anti-AI</span>
         <span class="badge green">✔ Human-Verified</span>
       </div>
       <p class="desc">Human-Verified Arabic &amp; English Subtitles. Anti-AI.</p>
@@ -228,4 +186,3 @@ app.get('/', (req, res) => {
 });
 
 module.exports.handler = serverless(app);
-});
